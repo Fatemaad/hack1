@@ -1,75 +1,58 @@
-# AI-Powered Virtual Wardrobe Backend
+# AI-Powered Virtual Wardrobe (Next.js)
 
-This project is a Node.js Express backend for a virtual wardrobe application. It allows users to upload photos of their clothing, uses the Google Cloud Vision API to analyze the items, and stores the extracted details (like clothing type and color) in a Supabase database. The system is designed to support an AI agent (such as one from ACI.dev) that can provide outfit suggestions based on the user's wardrobe and other data points like weather.
+This project is a full-stack Next.js application for a virtual wardrobe. It allows users to upload photos of their clothing, uses the Google Cloud Vision API to analyze the items, and stores the extracted details in a Supabase database. The frontend is built with Next.js App Router, Tailwind CSS, and shadcn/ui components.
 
 ---
 
 ## Features
 
--   **Secure User Authentication**: Endpoints are protected using Supabase JWT authentication.
+-   **Modern Frontend**: Built with Next.js 14 (App Router), React, and Tailwind CSS.
+-   **Component-Based UI**: Uses shadcn/ui for beautiful and accessible components.
 -   **Image Upload**: Users can upload photos of their clothing (JPG/PNG).
--   **File Validation**: Validates uploaded files for type (JPG/PNG) and size (max 5MB).
--   **Image Processing**: Resizes images using `sharp` for efficient analysis and to reduce costs.
 -   **AI-Powered Clothing Analysis**: Leverages Google Cloud Vision API's Object Localization and Image Properties features to accurately identify clothing items and their dominant colors.
--   **Database Storage**: Stores extracted clothing details in a user-specific `wardrobe` table in Supabase.
--   **Automated Cleanup**: Deletes photos from Supabase Storage after analysis is complete.
--   **Filtered Wardrobe API**: Provides a `/wardrobe` endpoint for an AI agent to query a user's clothing inventory with filters (e.g., by type or color).
--   **Security**: Includes basic rate limiting to prevent abuse.
+-   **Database & Storage**: Stores extracted clothing details and photos in Supabase.
+-   **API Routes**: Backend logic is handled by Next.js API Routes.
+-   **Filtered Wardrobe API**: Provides a `/api/wardrobe` endpoint for querying a user's clothing inventory with filters.
 
 ---
 
-## Tech Stack
-
--   **Backend**: Node.js, Express.js
--   **Database & Storage**: Supabase (PostgreSQL, Supabase Storage)
--   **AI / Machine Learning**: Google Cloud Vision API
--   **Image Processing**: `sharp`
--   **Authentication**: Supabase Auth (JWT)
--   **File Handling**: `multer`
-
----
-
-## Setup and Installation
+## Getting Started
 
 Follow these steps to get the project running locally.
 
 ### 1. Prerequisites
 
--   Node.js (v16 or later)
--   A Supabase project
+-   Node.js (v18 or later)
+-   npm, yarn, or pnpm
+-   A Supabase project with a `wardrobe` table and a `wardrobe-photos` storage bucket.
 -   A Google Cloud project with the Vision API enabled and service account credentials.
 
-### 2. Clone the Repository
-
-```bash
-git clone https://github.com/Fatemaad/hack1.git
-cd hack1
-```
-
-### 3. Install Dependencies
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 4. Set Up Environment Variables
+### 3. Set Up Environment Variables
 
-Create a `.env` file in the root of the project and add the following variables:
+Create a `.env.local` file in the root of the project and add the following variables. You can get the Supabase keys from your project's settings.
 
 ```
 # Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
+
 
 # Google Cloud Configuration
 # Point this to the location of your service account JSON key file
 GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
-
-# Server Port
-PORT=3001
 ```
 
-### 5. Supabase Database Schema
+**Note:** For the Vision API to work, you need to have your Google Cloud credentials file (`credentials.json`) in the root of the project.
+
+### 4. Supabase Database Schema
 
 Ensure you have a `wardrobe` table in your Supabase database. You can use the following SQL to create it:
 
@@ -97,71 +80,50 @@ CREATE POLICY "Users can insert their own wardrobe items"
   WITH CHECK (auth.uid() = user_id);
 ```
 
-### 6. Run the Server
+You also need a storage bucket named `wardrobe-photos`. You can create this in your Supabase project's Storage section.
+
+### 5. Run the Development Server
 
 ```bash
-node server.js
+npm run dev
 ```
 
-The server should now be running on `http://localhost:3001`.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ---
 
-## API Endpoints
+## Deployment to Vercel
 
-All endpoints require a valid Supabase JWT in the `Authorization: Bearer <TOKEN>` header.
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
 
-### Upload a Photo
+1.  **Push to GitHub**: Push your code to a GitHub repository.
+2.  **Import Project**: Import your repository into Vercel.
+3.  **Configure Environment Variables**: Add your `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `GOOGLE_APPLICATION_CREDENTIALS` (you'll need to paste the content of your `credentials.json` file) as environment variables in the Vercel project settings.
+4.  **Deploy**: Vercel will automatically build and deploy your application.
 
--   **Endpoint**: `POST /upload-photo`
--   **Description**: Uploads a single photo for analysis. The server will identify clothing items, store them in the database, and delete the photo.
--   **Content-Type**: `multipart/form-data`
--   **Form Field**: `photo` (The image file)
--   **Success Response (200)**:
-    ```json
-    {
-      "message": "Photo processed, clothing saved, and photo deleted successfully.",
-      "items": [
-        {
-          "id": 1,
-          "user_id": "...",
-          "type": "Jeans",
-          "color": "rgb(48, 79, 122)",
-          "material": null,
-          "season": null,
-          "created_at": "..."
-        }
-      ]
-    }
-    ```
+**Note:** Any push to the `main` branch of the linked GitLab repository will automatically trigger a new deployment on Vercel.
 
-### Retrieve Wardrobe
+---
 
--   **Endpoint**: `GET /wardrobe`
--   **Description**: Retrieves a list of all clothing items for the authenticated user.
--   **Query Parameters (Optional)**:
-    -   `type` (string): Filters items by type (e.g., `/wardrobe?type=shirt`). Uses case-insensitive partial matching.
-    -   `color` (string): Filters items by color (e.g., `/wardrobe?color=rgb(255, 0, 0)`).
--   **Success Response (200)**:
-    ```json
-    [
-      {
-        "id": 1,
-        "user_id": "...",
-        "type": "Jeans",
-        "color": "rgb(48, 79, 122)",
-        "material": null,
-        "season": null,
-        "created_at": "..."
-      },
-      {
-        "id": 2,
-        "user_id": "...",
-        "type": "T-shirt",
-        "color": "rgb(250, 250, 250)",
-        "material": "cotton",
-        "season": null,
-        "created_at": "..."
-      }
-    ]
-    ``` 
+## How to Test
+
+### User Authentication
+
+The application is set up to work with Supabase Auth. However, for testing the API endpoints directly or for the purpose of this demo, the frontend is currently using the anon key as a placeholder for the Authorization header. To properly test, you should implement a full authentication flow:
+
+1.  Create a sign-up and sign-in page in the UI.
+2.  Use the Supabase client library (`@supabase/supabase-js`) to handle user authentication.
+3.  When a user is logged in, get the JWT from `supabase.auth.getSession()` and use it in the `Authorization` header for API requests.
+
+### Photo Upload
+
+1.  Navigate to the **Upload** page.
+2.  Drag and drop or select a photo of a clothing item.
+3.  The photo will be sent to the `/api/upload-photo` endpoint.
+4.  The backend will analyze the photo, save the item to your `wardrobe` table, and you should see a success message.
+
+### Wardrobe Display
+
+1.  Navigate to the **Wardrobe** page.
+2.  The page will fetch all items from your `wardrobe` table and display them.
+3.  You can use the filters to search for items by name or filter by category and color.
